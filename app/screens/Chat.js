@@ -10,21 +10,23 @@ const Chat = () => {
 	const [visible, setVisible] = useState(false);
 	const [rooms, setRooms] = useState([]);
 
-	useLayoutEffect(() => {
-		function fetchGroups() {
-			fetch("http://localhost:4000/api")
-				.then((res) => res.json())
-				.then((data) => setRooms(data))
-				.catch((err) => console.error(err));
-		}
-		fetchGroups();
-	}, []);
+//👇🏻 Runs when the component mounts
+useLayoutEffect(() => {
+    function fetchGroups() {
+        fetch("http://localhost:4000/api")
+            .then((res) => res.json())
+            .then((data) => setRooms(data))
+            .catch((err) => console.error(err));
+    }
+    fetchGroups();
+}, []);
 
-	useEffect(() => {
-		socket.on("roomsList", (rooms) => {
-			setRooms(rooms);
-		});
-	}, [socket]);
+//👇🏻 Runs whenever there is new trigger from the backend
+useEffect(() => {
+    socket.on("roomsList", (rooms) => {
+        setRooms(rooms);
+    });
+}, [socket]);
 
 	const handleCreateGroup = () => setVisible(true);
 

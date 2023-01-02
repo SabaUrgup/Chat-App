@@ -3,6 +3,7 @@ import { View, TextInput, Text, FlatList, Pressable } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import MessageComponent from "../component/MessageComponent";
 import { styles } from "../utils/styles";
+import socket from "../utils/socket";
 
 const Messaging = ({ route, navigation }) => {
     const [chatMessages, setChatMessages] = useState([
@@ -37,33 +38,43 @@ const Messaging = ({ route, navigation }) => {
         }
     };
 
-    //👇🏻 Sets the header title to the name chatroom's name
-    useLayoutEffect(() => {
-        navigation.setOptions({ title: name });
-        getUsername()
-    }, []);
-
     /*👇🏻 
         This function gets the time the user sends a message, then 
         logs the username, message, and the timestamp to the console.
      */
-    const handleNewMessage = () => {
-        const hour =
-            new Date().getHours() < 10
-                ? `0${new Date().getHours()}`
-                : `${new Date().getHours()}`;
+        const handleNewMessage = () => {
+            const hour =
+                new Date().getHours() < 10
+                    ? `0${new Date().getHours()}`
+                    : `${new Date().getHours()}`;
+    
+            const mins =
+                new Date().getMinutes() < 10
+                    ? `0${new Date().getMinutes()}`
+                    : `${new Date().getMinutes()}`;
+    
+            if (user) {
+                socket.emit("newMessage", {
+                    message,
+                    room_id: id,
+                    user,
+                    timestamp: { hour, mins },
+                });
+            }
+        };
 
-        const mins =
-            new Date().getMinutes() < 10
-                ? `0${new Date().getMinutes()}`
-                : `${new Date().getMinutes()}`;
+    //👇🏻 Sets the header title to the name chatroom's name
+    
+	useLayoutEffect(() => {
+		navigation.setOptions({ title: name });
+		getUsername();
+		socket.emit("findRoom", id);
+		socket.on("foundRoom", (roomChats) => setChatMessages(roomChats));
+	}, []);
 
-        console.log({
-            message,
-            user,
-            timestamp: { hour, mins },
-        });
-    };
+	useEffect(() => {
+		socket.on("foundRoom", (roomChats) => setChatMessages(roomChats));
+	}, [socket]);
 
     return (
         <View style={styles.messagingscreen}>
