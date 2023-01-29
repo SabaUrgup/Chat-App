@@ -1,30 +1,18 @@
-import React, { useEffect, useLayoutEffect, useState } from "react";
+import React, { useLayoutEffect, useState } from "react";
 import { View, TextInput, Text, FlatList, Pressable } from "react-native";
-import socket from "../utils/socket";
 import MessageComponent from "../component/MessageComponent";
 import { styles } from "../utils/styles";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const Messaging = ({ route, navigation }) => {
-	const [user, setUser] = useState("");
-	const { name, id } = route.params;
-
 	const [chatMessages, setChatMessages] = useState([]);
 	const [message, setMessage] = useState("");
-	const [subject, setSubject] = useState("");
 
-	
+	const { name, id, user } = route.params;
 
-	const getUsername = async () => {
-		try {
-			const value = await AsyncStorage.getItem("username");
-			if (value !== null) {
-				setUser(value);
-			}
-		} catch (e) {
-			console.error("Error while loading username!");
-		}
-	};
+	//👇🏻 Sets the header title to the name chatroom's name
+	useLayoutEffect(() => {
+		navigation.setOptions({ title: name });
+	}, []);
 
 	const handleNewMessage = () => {
 		const hour =
@@ -37,28 +25,12 @@ const Messaging = ({ route, navigation }) => {
 				? `0${new Date().getMinutes()}`
 				: `${new Date().getMinutes()}`;
 
-		if (user) {
-			socket.emit("newMessage", {
-				subject,
-				message,
-				room_id: id,
-				user,
-				timestamp: { hour, mins },
-			});
-		}
+		console.log({
+			message,
+			user,
+			timestamp: { hour, mins },
+		});
 	};
-
-	useLayoutEffect(() => {
-		navigation.setOptions({ title: name });
-		getUsername();
-		//👇🏻 Sends the id to the server to fetch all its messages
-		socket.emit("findRoom", id);
-		socket.on("foundRoom", (roomChats) => setChatMessages(roomChats));
-	}, []);
-
-	useEffect(() => {
-		socket.on("foundRoom", (roomChats) => setChatMessages(roomChats));
-	}, [socket]);
 
 	return (
 		<View style={styles.messagingscreen}>
@@ -83,19 +55,9 @@ const Messaging = ({ route, navigation }) => {
 
 			<View style={styles.messaginginputContainer}>
 				<TextInput
-					style={styles.subjectinput}
-					maxLength={8}
-					autoCorrect={false}
-					placeholder="Subject"
-					onChangeText={(value) => setSubject(value)}
-				/>
-				<TextInput
 					style={styles.messaginginput}
-					autoCorrect={false}
-					placeholder="Message"
 					onChangeText={(value) => setMessage(value)}
 				/>
-				
 				<Pressable
 					style={styles.messagingbuttonContainer}
 					onPress={handleNewMessage}

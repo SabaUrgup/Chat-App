@@ -5,28 +5,28 @@ import Modal from "../component/Modal";
 import ChatComponent from "../component/ChatComponent";
 import socket from "../utils/socket";
 import { styles } from "../utils/styles";
+import {SOCKET_URL} from '../config.js';
 
 const Chat = () => {
 	const [visible, setVisible] = useState(false);
 	const [rooms, setRooms] = useState([]);
+	
+//fetch and listen to the roomsList from the server and display the chat rooms.
+	useLayoutEffect(() => {
+		function fetchGroups() {
+			fetch(SOCKET_URL+"/api")
+				.then((res) => res.json())
+				.then((data) => setRooms(data))
+				.catch((err) => console.error(err));
+		}
+		fetchGroups();
+	}, []);
 
-//👇🏻 Runs when the component mounts
-useLayoutEffect(() => {
-    function fetchGroups() {
-        fetch("http://localhost:4000/api")
-            .then((res) => res.json())
-            .then((data) => setRooms(data))
-            .catch((err) => console.error(err));
-    }
-    fetchGroups();
-}, []);
-
-//👇🏻 Runs whenever there is new trigger from the backend
-useEffect(() => {
-    socket.on("roomsList", (rooms) => {
-        setRooms(rooms);
-    });
-}, [socket]);
+	useEffect(() => {
+		socket.on("roomsList", (rooms) => {
+			setRooms(rooms);
+		});
+	}, [socket]);
 
 	const handleCreateGroup = () => setVisible(true);
 

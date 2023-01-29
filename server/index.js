@@ -1,8 +1,10 @@
 const express = require("express");
 const app = express();
+//allows data transfer between server and client domains
 const http = require("http").Server(app);
 const cors = require("cors");
 const PORT = 4000;
+//create a real-time connection
 const socketIO = require("socket.io")(http, {
 	cors: {
 		origin: "http://localhost:3000",
@@ -13,28 +15,9 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(cors());
 
+//Id's for chatRooms
 const generateID = () => Math.random().toString(36).substring(2, 10);
-let chatRooms = [
-        //👇🏻 Here is the data structure of each chatroom
-    // {
-    //  id: generateID(),
-    //  name: "Novu Hangouts",
-    //  messages: [
-    //      {
-    //          id: generateID(),
-    //          text: "Hello guys, welcome!",
-    //          time: "07:50",
-    //          user: "Tomer",
-    //      },
-    //      {
-    //          id: generateID(),
-    //          text: "Hi Tomer, thank you! 😇",
-    //          time: "08:50",
-    //          user: "David",
-    //      },
-    //  ],
-    // },
-];
+let chatRooms = [];
 
 socketIO.on("connection", (socket) => {
 	console.log(`⚡: ${socket.id} user just connected!`);
@@ -52,27 +35,26 @@ socketIO.on("connection", (socket) => {
 		// console.log("Messages Form", result[0].messages);
 	});
 
+	//Listen to the event on the server and update the chatRoom array.
 	socket.on("newMessage", (data) => {
 		//👇🏻 Destructures the property from the object
-        const { room_id, message, user, timestamp } = data;
-
-        //👇🏻 Finds the room where the message was sent
-        let result = chatRooms.filter((room) => room.id == room_id);
-		
-        //👇🏻 Create the data structure for the message
-        const newMessage = {
+		const { room_id, subject, message, user, timestamp } = data;
+		//👇🏻 Finds the room where the message was sent
+		let result = chatRooms.filter((room) => room.id == room_id);
+		//👇🏻 Create the data structure for the message
+		const newMessage = {
 			id: generateID(),
+			subject: subject,
 			text: message,
 			user,
 			time: `${timestamp.hour}:${timestamp.mins}`,
 		};
+
+    //👇🏻 Updates the chatroom messages
 		console.log("New Message", newMessage);
-        
-        //👇🏻 Updates the chatroom messages
 		socket.to(result[0].name).emit("roomMessage", newMessage);
 		result[0].messages.push(newMessage);
 
-        //👇🏻 Trigger the events to reflect the new changes
 		socket.emit("roomsList", chatRooms);
 		socket.emit("foundRoom", result[0].messages);
 	});
@@ -82,6 +64,7 @@ socketIO.on("connection", (socket) => {
 	});
 });
 
+//Also, return the chat room list via the API route as below:
 app.get("/api", (req, res) => {
 	res.json(chatRooms);
 });
